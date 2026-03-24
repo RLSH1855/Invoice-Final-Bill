@@ -832,7 +832,8 @@
         @media print {
             .no-print, .sidebar, #toast { display: none !important; }
             .main-layout { display: block; }
-            .content-wrap { padding: 0; background: white; }
+            body, .content-wrap { background: white !important; }
+            .content-wrap { padding: 0; }
             .ws-card {
                 box-shadow: none; border: none;
                 margin: 0; padding: 0;
