@@ -841,11 +841,14 @@
             }
             /* Content sections get side padding */
             .invoice-header,
-            .info-block,
             .add-row-wrap,
             .bottom-section {
                 padding-left: 0.3in !important;
                 padding-right: 0.3in !important;
+            }
+            .info-block {
+                margin-left: 0.3in !important;
+                margin-right: 0.3in !important;
             }
             /* Bars bleed edge to edge — pad the text INSIDE them */
             .date-bar-left  { padding-left:  0.3in !important; }
@@ -862,6 +865,8 @@
                 min-height: 9.5in;
             }
             .print-spacer { flex: 1; }
+            .print-only { display: inline !important; }
+            #repairDatePrint { color: rgba(255,255,255,0.9); font-weight: 700; font-size: 11px; }
             .info-input, .desc-input, .po-input, .amount-input,
             .other-input, .repair-date-input, .tax-rate-input {
                 border: none !important;
@@ -1343,6 +1348,7 @@ function loadRecord(id) {
     $('#ClaimNumTop').val(r.claim || '');
     $('#TaxRate').val(r.taxRate || '10.5');
     $('#repairDate').val(r.repairDate || '');
+    $('#repairDatePrint').text(r.repairDate || '');
     $('#otherAmount').val(r.other || '0.00');
 
     $('#lineItemsBody').empty();
@@ -1530,8 +1536,10 @@ $(document).ready(function() {
         disableMobile: true,
         onChange: function(selectedDates, dateStr) {
             $('#repairDate').val(dateStr);
+            $('#repairDatePrint').text(dateStr);
         }
     });
+    $('#repairDatePrint').text($('#repairDate').val());
 });
 
 /* ══════════════════════════════════════════════════════
