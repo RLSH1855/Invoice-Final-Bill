@@ -838,6 +838,7 @@
                 margin: 0; padding: 0;
                 max-width: 100%; width: 100%;
             }
+            /* Content sections get side padding */
             .invoice-header,
             .info-block,
             .add-row-wrap,
@@ -845,6 +846,15 @@
                 padding-left: 0.3in !important;
                 padding-right: 0.3in !important;
             }
+            /* Bars bleed edge to edge — pad the text INSIDE them */
+            .date-bar-left  { padding-left:  0.3in !important; }
+            .date-bar-right { padding-right: 0.3in !important; }
+            .section-bar    { padding-left:  0.3in !important; padding-right: 0.3in !important; }
+            /* Table first/last cells get side padding */
+            thead th:first-child, tbody td:first-child { padding-left:  0.3in !important; }
+            thead th:last-child,  tbody td:last-child  { padding-right: 0.3in !important; }
+            .grand-total-row td:first-child { padding-left:  0.3in !important; }
+            .grand-total-row td:last-child  { padding-right: 0.3in !important; }
             #capture-area {
                 display: flex;
                 flex-direction: column;
