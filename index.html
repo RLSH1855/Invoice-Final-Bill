@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>3J's Auto Body — Final Bill</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wdth,wght@75,400;75,600;75,700;75,800;100,400;100,600;100,700;100,800&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Prevent Bootstrap from overriding font */
+        *, *::before, *::after { font-family: 'Open Sans', sans-serif !important; }
+        :root {
+            --primary:      #2C3E50;
+            --primary-dark: #1a252f;
+            --accent:       #D4A017;
+            --accent-text:  #ffffff;
+            --section-text: #F0C040;
+            --row-alt:      #f5f7f9;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background: #d8d8d8;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 0.3px;
+            margin: 0; padding: 0;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 265px 1fr;
+            min-height: 100vh;
+        }
+
+        /* ============================================================
+           SIDEBAR
+        ============================================================ */
+        .sidebar {
+            background: #2C3E50;
+            color: white;
+            padding: 0;
+            border-right: 1px solid #1a252f;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-inner {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px 8px 10px 8px;
+        }
+
+        .sidebar h6 {
+            font-weight: 800;
+            text-transform: uppercase;
+            border-bottom: 1px solid #34495e;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+            padding-left: 4px;
+        }
+
+        /* Fleet Selector */
+        .fleet-wrap { margin-bottom: 14px; }
+        .fleet-label {
+            font-size: 8.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #7f9ab0;
+            margin-bottom: 4px;
+        }
+        .fleet-select {
+            width: 100%;
+            background: #3E5871;
+            color: #fff;
+            border: 1px solid #4a6a85;
+            border-radius: 4px;
+            padding: 8px 10px;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            appearance: auto;
+            transition: border-color 0.2s;
+        }
+        .fleet-select:focus { outline: none; border-color: #7f9ab0; }
+
+        /* Full-width action buttons */
+        .sidebar-actions .btn {
+            width: 100%;
+            display: block;
+            margin: 0 0 7px 0;
+            padding: 8px 10px;
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar-actions .btn:hover {
+            box-shadow:
+                inset 0 3px 6px rgba(0,0,0,0.3),
+                inset 0 -3px 6px rgba(0,0,0,0.15) !important;
+        }
+
+        .btn-wipe {
+            background-color: #8B0000 !important;
+            color: white !important;
+            border: none !important;
+        }
+
+        /* ── Ripple pseudo-element on action buttons ── */
+        .sidebar-actions .btn::after {
+            content: "";
+            position: absolute;
+            width: 0; height: 0;
+            top: var(--my, 50%);
+            left: var(--mx, 50%);
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.18);
+            border-radius: 100%;
+            transition: width .4s ease, height .4s ease;
+            pointer-events: none;
+        }
+        .sidebar-actions .btn:active::after { width: 300px; height: 300px; }
+
+        /* ── Save Record — pending/success/fail animation ── */
+        .save-btn-wrapper {
+            display: block; width: 100%; height: 34px; margin-bottom: 7px;
+        }
+        #sidebarSaveBtn {
+            position: relative;
+            display: inline-block;
+            width: 100%; height: 100%;
+            background: #f0ad4e;
+            border: none; border-radius: 4px;
+            cursor: pointer;
+            transition: all .33s ease-in-out;
+        }
+        #sidebarSaveBtn:hover { background: #ec971f; }
+        #sidebarSaveBtn, #sidebarSaveBtn:focus { outline: none; }
+        #sidebarSaveBtn.sb-pending,
+        #sidebarSaveBtn.sb-success,
+        #sidebarSaveBtn.sb-fail {
+            width: 34px; border-radius: 50%;
+            pointer-events: none; cursor: default;
+        }
+        #sidebarSaveBtn.sb-pending .sb-txt,
+        #sidebarSaveBtn.sb-success .sb-txt,
+        #sidebarSaveBtn.sb-fail   .sb-txt { opacity: 0; }
+        #sidebarSaveBtn.sb-pending::before {
+            content: '';
+            position: absolute; top: 50%; left: 50%;
+            height: 18px; width: 18px;
+            border: 3px solid rgba(255,255,255,.35);
+            border-top-color: #fff; border-radius: 50%;
+            animation: sb-fadein .33s ease, sb-spin .66s linear 0s infinite;
+        }
+        #sidebarSaveBtn.sb-success, #sidebarSaveBtn.sb-success:hover { background: #27AE60; }
+        #sidebarSaveBtn.sb-success::after {
+            content: '';
+            position: absolute; top: 50%; left: 50%;
+            height: 25%; width: 50%;
+            border: 3px solid #fff; border-top-width: 0; border-left-width: 0;
+            transform: translate(-50%,-75%) rotate(-45deg);
+            animation: sb-fadein .6s ease;
+        }
+        #sidebarSaveBtn.sb-fail, #sidebarSaveBtn.sb-fail:hover { background: #E74C3C; }
+        #sidebarSaveBtn.sb-fail::after {
+            content: '';
+            position: absolute; top: 50%; left: 50%;
+            height: 65%; width: 65%;
+            background:
+                linear-gradient(to bottom, transparent 44%, #fff 44%, #fff 56%, transparent 56%),
+                linear-gradient(to right,  transparent 44%, #fff 44%, #fff 56%, transparent 56%);
+            transform: translate(-50%,-50%) rotate(-45deg);
+            animation: sb-fadein .6s ease;
+        }
+        .sb-txt {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            white-space: nowrap; font-size: 10px;
+            font-weight: 500; letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: #1a252f; transition: inherit;
+        }
+        @keyframes sb-fadein { 0%{opacity:0} 100%{opacity:1} }
+        @keyframes sb-spin {
+            0%   { transform: translate(-50%,-50%) rotate(0deg); }
+            100% { transform: translate(-50%,-50%) rotate(360deg); }
+        }
+
+        /* ── Print to PDF — rainbow glow on hover ── */
+        .btn-print-glow {
+            background: #2980b9 !important;
+            color: white !important;
+            border: none !important;
+            z-index: 0;
+        }
+        .btn-print-glow::before {
+            content: '';
+            background: linear-gradient(45deg,#ff0000,#ff7300,#fffb00,#48ff00,#00ffd5,#002bff,#7a00ff,#ff00c8,#ff0000);
+            position: absolute; top: -2px; left: -2px;
+            background-size: 400%; z-index: -1;
+            filter: blur(5px);
+            width: calc(100% + 4px); height: calc(100% + 4px);
+            animation: glow-spin 20s linear infinite;
+            opacity: 0; transition: opacity .3s ease-in-out;
+            border-radius: 4px;
+        }
+        .btn-print-glow::after {
+            z-index: -1; content: '';
+            position: absolute; width: 100%; height: 100%;
+            background: #2980b9; left: 0; top: 0; border-radius: 4px;
+            transition: background .2s;
+        }
+        .btn-print-glow:hover::before { opacity: 1 !important; }
+        .btn-print-glow:hover::after  { background: #3498db !important; }
+        @keyframes glow-spin {
+            0%  { background-position:0 0; }
+            50% { background-position:400% 0; }
+            100%{ background-position:0 0; }
+        }
+
+        /* ── Mouse-position ripple on sidebar action buttons ── */
+        .btn-ripple {
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-ripple::after {
+            content: '';
+            position: absolute;
+            width: 80px; height: 80px;
+            background: rgba(255,255,255,0.35);
+            border-radius: 50%;
+            transform: translate(var(--rx,-50%), var(--ry,-50%)) scale(0);
+            pointer-events: none;
+            transition: transform .45s ease, opacity .45s ease;
+            opacity: 1;
+        }
+        .btn-ripple.rippling::after {
+            transform: translate(var(--rx,-50%), var(--ry,-50%)) scale(3.5);
+            opacity: 0;
+        }
+
+        /* ── Slide-confirm delete on sidebar records ── */
+        .history-item { overflow: hidden; }
+        .del-slide-btn {
+            position: absolute; top: 50%; right: 6px;
+            transform: translateY(-50%);
+            background: #c0392b; border: none; border-radius: 3px;
+            color: white; width: 52px; height: 24px;
+            font-size: 9px; font-weight: 700;
+            letter-spacing: 0.4px; text-transform: uppercase;
+            cursor: pointer; overflow: hidden;
+            transition: all .25s cubic-bezier(0.310,-0.105,0.430,1.400);
+        }
+        .del-slide-btn .ds-text {
+            position: absolute; left: 0; top: 0;
+            width: 72%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            transition: all .25s cubic-bezier(0.310,-0.105,0.430,1.400);
+        }
+        .del-slide-btn .ds-text::after {
+            content: ''; position: absolute; right: 0; top: 15%;
+            width: 1px; height: 70%; background: rgba(255,255,255,0.4);
+        }
+        .del-slide-btn .ds-icon {
+            position: absolute; right: 0; top: 0;
+            width: 28%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px;
+            transition: all .25s cubic-bezier(0.310,-0.105,0.430,1.400);
+        }
+        .del-slide-btn:hover .ds-text,
+        .del-slide-btn.ds-ok .ds-text  { left: -72%; opacity: 0; }
+        .del-slide-btn:hover .ds-icon,
+        .del-slide-btn.ds-ok .ds-icon  { width: 100%; font-size: 13px; }
+        .del-slide-btn.ds-ok           { background: #27AE60; }
+
+        .search-box {
+            background: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            color: #000;
+            font-size: 11px;
+            padding: 7px 8px;
+            width: 100%;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .record-count {
+            font-size: 9px;
+            color: #aaa;
+            text-align: right;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+            padding-right: 2px;
+        }
+
+        .history-item {
+            background: #3E5871;
+            border-radius: 3px;
+            padding: 6px 10px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+            box-shadow:
+                inset 0 3px 6px rgba(0,0,0,0.3),
+                inset 0 -3px 6px rgba(0,0,0,0.15);
+        }
+
+        .history-item:hover {
+            background-color: #4a6680 !important;
+            border-left-color: #2ecc71 !important;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
+        }
+
+        .history-item .record-ro {
+            font-weight: 800;
+            font-size: 10px;
+            padding-right: 18px;
+            letter-spacing: 0.5px;
+            color: #fff;
+            line-height: 1.3;
+        }
+
+        .history-item .record-name {
+            font-size: 9px;
+            color: #b0c4d8;
+            letter-spacing: 0.5px;
+            line-height: 1.3;
+        }
+
+        .history-item .record-date {
+            font-size: 8px;
+            color: #7f9ab0;
+            margin-top: 1px;
+            letter-spacing: 0.5px;
+            line-height: 1.3;
+        }
+
+        .rec-fleet {
+            display: inline-block;
+            font-size: 7px; font-weight: 800;
+            letter-spacing: 0.4px; text-transform: uppercase;
+            padding: 1px 5px; border-radius: 2px;
+            margin-bottom: 3px;
+        }
+
+        /* Bottom utility bar */
+        .sidebar-footer {
+            border-top: 1px solid #34495e;
+            padding: 10px 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .sidebar-footer button {
+            background: none;
+            border: none;
+            color: #7f9ab0;
+            font-size: 9px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            padding: 2px 4px;
+            transition: color 0.2s ease;
+        }
+
+        .sidebar-footer button:hover { color: #ffffff; }
+
+        /* Auto-save indicator */
+        #autoSaveStatus { display:none; color:#2ecc71; font-size:9px; font-weight:600; letter-spacing:0.5px; }
+
+        /* ══════════════════════════════════════
+           TOAST
+        ══════════════════════════════════════ */
+        #toast {
+            position: fixed; bottom: 24px; left: 50%;
+            transform: translateX(-50%);
+            background: #2C3E50; color: white;
+            padding: 9px 22px; border-radius: 4px;
+            font-size: 11px; font-weight: 600;
+            font-family: 'Open Sans', sans-serif;
+            letter-spacing: 0.8px; z-index: 9999;
+            display: none; box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+        }
+
+        /* ══════════════════════════════════════
+           CONTENT / WORKSHEET
+        ══════════════════════════════════════ */
+        .content-wrap {
+            padding: 22px 20px;
+            background: #d8d8d8;
+        }
+        .ws-card {
+            background: white;
+            padding: 30px 0 26px 0;
+            max-width: 960px;
+            margin: 0 auto;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+            position: relative;
+        }
+        /* Padded interior sections — bars and table headers are NOT padded so they bleed edge to edge */
+        .invoice-header,
+        .info-block,
+        .add-row-wrap,
+        .bottom-section {
+            padding-left: 32px;
+            padding-right: 32px;
+        }
+
+        /* Watermark */
+        .ws-card::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 420px; height: 170px;
+            background-image: url('https://static.wixstatic.com/media/b95bd9_fc4d86d4c40043f5b23fa60f23bdf077~mv2.png');
+            background-repeat: no-repeat;
+            background-size: contain;
+            background-position: center;
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: 0;
+        }
+        #capture-area { position: relative; z-index: 1; }
+
+        /* ── INVOICE HEADER ── */
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-bottom: 14px;
+            border-bottom: 3px solid var(--primary);
+            margin-bottom: 16px;
+        }
+        .logo-area img { max-height: 82px; width: auto; display: block; }
+        .tagline {
+            font-size: 9px;
+            font-weight: 800;
+            color: var(--accent);
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+        .addr-block {
+            font-size: 9.5px;
+            font-weight: 600;
+            color: #444;
+            line-height: 1.8;
+            margin-top: 7px;
+        }
+        .bill-title {
+            font-size: 52px;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            line-height: 1;
+            text-align: right;
+        }
+        .bill-subtitle {
+            font-size: 11px;
+            font-weight: 600;
+            color: #777;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            text-align: right;
+            margin-top: 4px;
+        }
+
+        /* ── INFO BLOCK ── */
+        .info-block {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px 24px;
+            padding: 12px 14px;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            margin-bottom: 14px;
+        }
+        .info-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 3px 6px;
+            border-radius: 3px;
+            transition: background 0.18s ease;
+        }
+        .info-row:hover {
+            background: rgba(0,0,0,0.05);
+        }
+        .info-row:has(input:focus) {
+            background: color-mix(in srgb, var(--accent) 10%, white);
+            box-shadow: inset 3px 0 0 var(--accent);
+        }
+        .info-label {
+            font-weight: 800;
+            font-size: 9.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            color: var(--primary);
+            min-width: 88px;
+            white-space: nowrap;
+        }
+        .info-input {
+            flex: 1;
+            border: none;
+            border-bottom: 1px solid #ccc;
+            background: transparent;
+            padding: 2px 4px;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 11px;
+            font-weight: 500;
+            color: #222;
+            letter-spacing: 0.3px;
+            transition: border-color 0.18s;
+        }
+        .info-input:focus {
+            outline: none;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        /* ── DATE HEADER BAR ── */
+        .date-bar {
+            background: var(--primary);
+            padding: 7px 14px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            margin-bottom: 0;
+        }
+        .date-bar-left {
+            font-size: 11px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.85);
+            letter-spacing: 0.5px;
+        }
+        .date-bar-right {
+            font-size: 11px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.85);
+        }
+        .repair-date-input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(255,255,255,0.4);
+            color: rgba(255,255,255,0.9);
+            font-family: 'Open Sans', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            width: 130px;
+            padding: 0 4px;
+            text-align: center;
+            margin-left: 6px;
+        }
+        .repair-date-input:focus { outline: none; border-bottom-color: var(--accent); }
+        .repair-date-input::placeholder { color: rgba(255,255,255,0.4); }
+
+        /* ── SECTION BAR ── */
+        .section-bar {
+            background: linear-gradient(90deg,
+                var(--primary-dark) 0%,
+                var(--primary) 30%,
+                var(--primary) 70%,
+                var(--primary-dark) 100%
+            );
+            padding: 11px 14px;
+            text-align: center;
+            border-top: 3px solid var(--accent);
+            border-bottom: 3px solid var(--accent);
+            position: relative;
+        }
+        .section-bar-text {
+            font-size: 11.5px;
+            font-weight: 800;
+            color: white;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+        }
+        .section-bar-text::before,
+        .section-bar-text::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4));
+            max-width: 160px;
+        }
+        .section-bar-text::after {
+            background: linear-gradient(90deg, rgba(255,255,255,0.4), transparent);
+        }
+
+        /* ── TABLE ── */
+        table { width: 100%; border-collapse: collapse; }
+
+        thead th {
+            background: var(--primary) !important;
+            color: #fff !important;
+            padding: 8px 8px;
+            text-align: center;
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 10px;
+            letter-spacing: 0.8px;
+            border: 1px solid var(--primary-dark);
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        td {
+            border: 1px solid #ddd;
+            padding: 6px 8px;
+            vertical-align: middle;
+            font-size: 11px;
+        }
+        .line-row:nth-child(even) td { background: var(--row-alt); }
+        .line-row:not(.row-danger):hover td {
+            background: color-mix(in srgb, var(--accent) 6%, white) !important;
+            transition: background 0.18s ease;
+        }
+        .line-row:not(.row-danger):has(input:focus) td {
+            background: color-mix(in srgb, var(--accent) 11%, white) !important;
+        }
+        .row-num {
+            color: var(--accent);
+            font-weight: 800;
+            font-size: 11px;
+            text-align: center;
+            width: 30px;
+        }
+        .desc-input, .po-input, .amount-input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 2px 4px;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            border-radius: 2px;
+            transition: background 0.18s, box-shadow 0.18s;
+        }
+        .amount-input { text-align: right; }
+        .po-input     { text-align: center; }
+        .desc-input:focus, .po-input:focus, .amount-input:focus {
+            outline: none;
+        }
+        .val-out { text-align: right; font-weight: 600; }
+        .remove-row-btn {
+            background: none; border: none;
+            color: #c0392b; font-size: 13px; font-weight: 800;
+            cursor: pointer; padding: 0 4px; line-height: 1;
+            transition: color 0.2s, transform 0.2s;
+            position: relative; z-index: 5;
+        }
+        .remove-row-btn:hover { color: #ff0000; }
+
+        /* ── ROW DELETE ANIMATION ── */
+        .line-row td { transition: background 0.22s ease, color 0.22s ease; }
+        .line-row.row-danger td { background: #e74c3c !important; }
+        .line-row.row-danger input { color: rgba(255,255,255,0.9) !important; }
+        .line-row.row-danger .line-tax,
+        .line-row.row-danger .row-num { color: white !important; }
+        .line-row.row-danger .remove-row-btn { color: white !important; transform: scale(1.4); }
+
+        /* ── SIDEBAR ITEM DELETE ANIMATION ── */
+        .history-item { overflow: hidden; }
+        .del-overlay {
+            position: absolute; inset: 0;
+            background: #e74c3c;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0;
+            transition: opacity 0.22s ease;
+            pointer-events: none;
+            z-index: 10;
+            font-size: 26px; font-weight: 900; color: white;
+            letter-spacing: 0;
+        }
+        .history-item.item-danger .del-overlay { opacity: 1; }
+        .history-item.item-danger { border-left-color: #e74c3c !important; }
+
+        /* Toggle switch for tax */
+        .tax-toggle {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 42px; height: 22px;
+            background: #BDC3C7;
+            border-radius: 11px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.25s;
+            vertical-align: middle;
+            flex-shrink: 0;
+        }
+        .tax-toggle::before {
+            content: '';
+            position: absolute;
+            width: 18px; height: 18px;
+            background: white;
+            border-radius: 50%;
+            top: 2px; left: 2px;
+            transition: transform 0.25s;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+        }
+        .tax-toggle:checked { background: #1ABC9C; }
+        .tax-toggle:checked::before { transform: translateX(20px); }
+
+        .add-row-btn {
+            background: none;
+            border: 1px dashed #aaa;
+            color: #666;
+            font-size: 10px;
+            font-family: 'Open Sans', sans-serif;
+            padding: 4px 12px;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            margin-top: 5px;
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+        .add-row-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+        /* ── BOTTOM SECTION ── */
+        .bottom-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 24px;
+            margin-top: 18px;
+        }
+        .bottom-left { flex: 1; }
+        .note-bar {
+            font-size: 10px;
+            color: #555;
+            font-style: italic;
+            padding: 6px 10px;
+            border-left: 3px solid var(--accent);
+            background: #fffef5;
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+        .contact-line {
+            font-size: 10px;
+            font-weight: 600;
+            color: #444;
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+        .thank-you {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* Totals Table */
+        .totals-wrap { width: 310px; flex-shrink: 0; }
+        .totals-table { width: 100%; border-collapse: collapse; }
+        .totals-table td {
+            border: 1px solid #ddd;
+            padding: 6px 10px;
+            font-size: 11px;
+        }
+        .t-label {
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 9.5px;
+            letter-spacing: 0.6px;
+            color: #444;
+        }
+        .t-value { text-align: right; font-weight: 700; }
+        .grand-total-row td {
+            background: var(--primary) !important;
+            color: #fff !important;
+            font-weight: 800 !important;
+            font-size: 13px !important;
+            letter-spacing: 1px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .other-input {
+            width: 100%; border: none; background: transparent;
+            text-align: right; font-family: 'Open Sans', sans-serif;
+            font-size: 11px; font-weight: 700; padding: 0;
+        }
+        .other-input:focus { outline: none; }
+        .tax-rate-input {
+            width: 38px; border: none;
+            border-bottom: 1px solid #ccc;
+            background: transparent;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 9.5px; font-weight: 700;
+            text-align: center;
+            transition: background 0.18s, border-color 0.18s;
+        }
+        .tax-rate-input:hover { background: rgba(0,0,0,0.04); border-bottom-color: #999; }
+        .tax-rate-input:focus { outline: none; border-bottom-color: var(--accent); }
+
+        /* ══════════════════════════════════════
+           PRINT
+        ══════════════════════════════════════ */
+        @page { size: letter; margin: 0.5in; }
+        @media print {
+            .no-print, .sidebar, #toast { display: none !important; }
+            .main-layout { display: block; }
+            .content-wrap { padding: 0; background: white; }
+            .ws-card {
+                box-shadow: none; border: none;
+                margin: 0; padding: 0;
+                max-width: 100%; width: 100%;
+            }
+            .invoice-header,
+            .info-block,
+            .add-row-wrap,
+            .bottom-section {
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+            }
+            #capture-area {
+                display: flex;
+                flex-direction: column;
+                min-height: 9.5in;
+            }
+            .print-spacer { flex: 1; }
+            .info-input, .desc-input, .po-input, .amount-input,
+            .other-input, .repair-date-input, .tax-rate-input {
+                border: none !important;
+                background: transparent !important;
+            }
+            .add-row-btn, .remove-row-btn { display: none !important; }
+            thead th, .section-bar, .date-bar, .grand-total-row td,
+            .note-bar, .tax-toggle {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+        input[type="number"] { -moz-appearance: textfield; }
+
+        /* ── FLATPICKR STYLES ── */
+        .flatpickr-calendar {
+            font-family: 'Montserrat', sans-serif !important;
+            border-radius: 6px !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25) !important;
+        }
+        .flatpickr-months { background: var(--primary) !important; border-radius: 6px 6px 0 0; }
+        .flatpickr-month,
+        .flatpickr-current-month,
+        .flatpickr-current-month .cur-month,
+        .flatpickr-current-month input.cur-year { color: white !important; fill: white !important; }
+        .flatpickr-prev-month svg, .flatpickr-next-month svg { fill: white !important; }
+        .flatpickr-prev-month:hover svg, .flatpickr-next-month:hover svg { fill: var(--accent) !important; }
+        .flatpickr-weekday { background: var(--primary) !important; color: rgba(255,255,255,0.7) !important; font-weight: 700; font-size: 10px; }
+        .flatpickr-weekdays { background: var(--primary) !important; }
+        .flatpickr-day.selected,
+        .flatpickr-day.selected:hover {
+            background: var(--primary) !important;
+            border-color: var(--primary) !important;
+            color: white !important;
+            font-weight: 700;
+        }
+        .flatpickr-day:hover { background: #aed6f1 !important; color: #222 !important; }
+        .flatpickr-day.today { border-color: var(--accent) !important; }
+        .flatpickr-day.today:hover { background: var(--accent) !important; color: white !important; }
+    </style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<div class="main-layout">
+
+    <!-- ============================================================
+         SIDEBAR
+    ============================================================ -->
+    <div class="sidebar no-print">
+
+        <div class="sidebar-inner">
+
+            <!-- Fleet Selector -->
+            <div class="fleet-wrap">
+                <div class="fleet-label">Fleet Account</div>
+                <select id="fleetSelect" class="fleet-select" onchange="applyFleet(this.value)">
+                    <option value="0">AmeriFleet</option>
+                    <option value="1">ARI</option>
+                    <option value="0">CEI / Element</option>
+                    <option value="2">EMKAY</option>
+                    <option value="2">Fleet Response</option>
+                    <option value="1">Holman</option>
+                    <option value="2">Innovation Auto</option>
+                    <option value="0">LeasePlan</option>
+                    <option value="1">Wheels</option>
+                </select>
+            </div>
+
+            <h6>ACTIONS</h6>
+            <div class="sidebar-actions mb-4">
+                <button class="btn btn-sm btn-success btn-ripple" onclick="createNewForm(); this.blur();">+ Create New Form</button>
+                <div class="save-btn-wrapper">
+                    <button id="sidebarSaveBtn" onclick="animateSaveBtn()">
+                        <span class="sb-txt">Save Record</span>
+                    </button>
+                </div>
+                <button class="btn btn-sm btn-wipe btn-ripple" onclick="clearForm(); this.blur();">Wipe Form Data</button>
+                <button class="btn btn-sm btn-print-glow btn-ripple" onclick="window.print(); this.blur();">&#128438;&nbsp; Print to PDF</button>
+                <button class="btn btn-sm btn-secondary btn-ripple" onclick="window.print(); this.blur();">Local Printer</button>
+            </div>
+
+            <h6 style="display:flex; align-items:center; justify-content:space-between;">
+                <span>RECORDS <span id="autoSaveStatus">&#10003; AUTO-SAVED</span></span>
+            </h6>
+            <input type="text" id="sidebarSearch" class="search-box" placeholder="Search RO#, Claim#, Driver..." onkeyup="filterSidebar()" spellcheck="false">
+            <div id="recordCount" class="record-count"></div>
+            <div id="sidebarList"></div>
+
+        </div><!-- /sidebar-inner -->
+
+        <div class="sidebar-footer">
+            <button onclick="importRecordsBackup(); this.blur();">&#8593; Import Backup</button>
+            <button onclick="exportRecordsBackup(); this.blur();">&#8595; Export Backup</button>
+        </div>
+
+    </div><!-- /SIDEBAR -->
+
+    <!-- ════════════════════ WORKSHEET ════════════════════ -->
+    <div class="content-wrap">
+        <div class="ws-card">
+            <div id="capture-area">
+
+                <!-- HEADER -->
+                <div class="invoice-header">
+                    <div class="logo-area">
+                        <img src="https://static.wixstatic.com/media/b95bd9_fc4d86d4c40043f5b23fa60f23bdf077~mv2.png" alt="3J's Auto Body & Paint">
+                        <div class="tagline">"Meeting Great People by Accident Since 1991"</div>
+                        <div class="addr-block">
+                            1855 E. 29th Street &nbsp;|&nbsp; Signal Hill, CA 90755<br>
+                            Office: 562.424.6744 &nbsp;|&nbsp; threejsauto@verizon.net
+                        </div>
+                    </div>
+                    <div>
+                        <div class="bill-title">Final Bill</div>
+                        <div class="bill-subtitle">Auto Body Repair Invoice</div>
+                    </div>
+                </div>
+
+                <!-- INFO BLOCK -->
+                <div class="info-block" style="padding-left:32px;padding-right:32px;">
+                    <div class="info-row">
+                        <span class="info-label">RO #</span>
+                        <input type="text" id="RONum" class="info-input" placeholder="Repair Order #" style="text-transform:uppercase; font-weight:700;">
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Date</span>
+                        <span class="info-input" style="border-bottom:none; font-weight:600;" id="currentDate"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Insurance</span>
+                        <input type="text" id="InsCoTop" class="info-input proper-case" placeholder="Insurance Company">
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Driver</span>
+                        <input type="text" id="Cust" class="info-input proper-case" placeholder="Driver Name">
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Vehicle</span>
+                        <input type="text" id="Veh" class="info-input proper-case" placeholder="Year Make Model | Color">
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Claim #</span>
+                        <input type="text" id="ClaimNumTop" class="info-input" placeholder="Claim Number">
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">VIN #</span>
+                        <input type="text" id="VIN" class="info-input" placeholder="VIN Number" maxlength="17" style="text-transform:uppercase;">
+                    </div>
+                </div>
+
+                <!-- DATE / REPAIR BAR -->
+                <div class="date-bar">
+                    <span class="date-bar-left">Repairs Completed On:</span>
+                    <span class="date-bar-right">
+                        <input type="text" id="repairDate" class="repair-date-input no-print" placeholder="MM/DD/YYYY">
+                        <span id="repairDatePrint" class="print-only" style="display:none;"></span>
+                    </span>
+                </div>
+
+                <!-- SECTION BAR -->
+                <div class="section-bar">
+                    <span class="section-bar-text">Repairs Are Completed</span>
+                </div>
+
+                <!-- LINE ITEMS -->
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:3%;" class="no-print">#</th>
+                            <th style="width:44%;">Description</th>
+                            <th style="width:17%;">PO #</th>
+                            <th style="width:14%;">Amount</th>
+                            <th style="width:7%;" class="no-print">Tax?</th>
+                            <th style="width:11%;">Tax Amt</th>
+                            <th style="width:4%;" class="no-print"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="lineItemsBody"></tbody>
+                </table>
+                <div class="add-row-wrap no-print" style="margin-top:5px;">
+                    <button class="add-row-btn" onclick="addLineRow()">+ Add Line Item</button>
+                </div>
+
+                <!-- PRINT SPACER -->
+                <div class="print-spacer"></div>
+
+                <!-- BOTTOM SECTION -->
+                <div class="bottom-section">
+                    <div class="bottom-left">
+                        <div class="note-bar">
+                            Note: 3J's is not liable for any missing parts after tear down. Vehicle is picked up "as is."
+                        </div>
+                        <div class="contact-line">
+                            If you have any questions concerning this invoice, contact our office at<br>
+                            <strong>(562) 424-6744</strong> &nbsp;|&nbsp; Business Hours: Mon–Fri 8am–5pm
+                        </div>
+                        <div class="thank-you">Thank You for Your Business!</div>
+                    </div>
+
+                    <div class="totals-wrap">
+                        <table class="totals-table">
+                            <tr>
+                                <td class="t-label">Subtotal</td>
+                                <td class="t-value" id="grandSubtotal">$0.00</td>
+                            </tr>
+                            <tr>
+                                <td class="t-label">
+                                    Sales Tax
+                                    <span class="no-print" style="font-weight:400;font-size:9px;color:#888;">
+                                        (<input type="number" id="TaxRate" class="tax-rate-input auto-clear" value="10.5" step="0.1">%)
+                                    </span>
+                                    <span id="taxRatePrint" style="font-weight:600;font-size:9px;color:#888;"></span>
+                                </td>
+                                <td class="t-value" id="grandTax">$0.00</td>
+                            </tr>
+                            <tr>
+                                <td class="t-label">Other</td>
+                                <td class="t-value">
+                                    <input type="number" id="otherAmount" class="other-input" step="0.01" value="0.00">
+                                </td>
+                            </tr>
+                            <tr class="grand-total-row">
+                                <td>Total</td>
+                                <td class="t-value" id="grandTotal">$0.00</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+            </div><!-- /capture-area -->
+        </div><!-- /ws-card -->
+    </div><!-- /content-wrap -->
+
+</div><!-- /main-layout -->
+
+<script>
+/* ══════════════════════════════════════════════════════
+   FLEET THEMES
+══════════════════════════════════════════════════════ */
+/* 3 styles — each shared by 3 fleet companies */
+const FLEETS = [
+    {
+        id: 'style1', label: 'Navy & Gold',
+        primary: '#2C3E50', primaryDark: '#1a252f',
+        accent: '#D4A017', accentText: '#fff',
+        sectionText: '#F0C040', rowAlt: '#f5f7f9'
+    },
+    {
+        id: 'style2', label: 'Charcoal & Teal',
+        primary: '#2d2d2d', primaryDark: '#1a1a1a',
+        accent: '#1abc9c', accentText: '#fff',
+        sectionText: '#1abc9c', rowAlt: '#f4f4f4'
+    },
+    {
+        id: 'style3', label: 'Black & Red',
+        primary: '#1a1a1a', primaryDark: '#000000',
+        accent: '#e74c3c', accentText: '#fff',
+        sectionText: '#ff6b5b', rowAlt: '#fdf5f5'
+    }
+];
+
+/* Maps each dropdown option's value to a fleet name */
+const FLEET_NAMES = {
+    '0': { options: ['AmeriFleet', 'CEI / Element', 'LeasePlan'] },
+    '1': { options: ['ARI', 'Holman', 'Wheels'] },
+    '2': { options: ['Fleet Response', 'EMKAY', 'Innovation Auto'] }
+};
+
+let currentFleetIdx = 0;
+
+function applyFleet(idx) {
+    idx = parseInt(idx);
+    currentFleetIdx = idx;
+    const f = FLEETS[idx];
+    const s = document.documentElement.style;
+    s.setProperty('--primary',      f.primary);
+    s.setProperty('--primary-dark', f.primaryDark);
+    s.setProperty('--accent',       f.accent);
+    s.setProperty('--accent-text',  f.accentText);
+    s.setProperty('--section-text', f.sectionText);
+    s.setProperty('--row-alt',      f.rowAlt);
+
+    // Auto-fill Insurance field with the selected fleet company name
+    const companyName = $('#fleetSelect option:selected').text();
+    $('#InsCoTop').val(companyName);
+}
+
+/* ══════════════════════════════════════════════════════
+   UTILITIES
+══════════════════════════════════════════════════════ */
+function setTodayDate() {
+    const n = new Date();
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const str = days[n.getDay()] + ', ' + months[n.getMonth()] + ' ' + n.getDate() + ', ' + n.getFullYear();
+    $('#currentDate').text(str);
+}
+
+function formatDate(d) {
+    return String(d.getMonth()+1).padStart(2,'0') + '/' +
+           String(d.getDate()).padStart(2,'0') + '/' + d.getFullYear();
+}
+
+function showToast(msg, type) {
+    const bg = type === 'success' ? '#27ae60' : type === 'error' ? '#8B0000' : '#2C3E50';
+    $('#toast').stop(true,true).css({ background: bg, display: 'none' }).text(msg).fadeIn(200);
+    setTimeout(() => $('#toast').fadeOut(600), 2400);
+}
+
+function showAutoSaved() {
+    $('#autoSaveStatus').stop(true,true).fadeIn(200);
+    setTimeout(() => $('#autoSaveStatus').fadeOut(1000), 2500);
+}
+
+function toProperCase(str) {
+    return str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.substr(1).toLowerCase());
+}
+
+/* ══════════════════════════════════════════════════════
+   CALCULATE
+══════════════════════════════════════════════════════ */
+function calculate() {
+    const taxRate = (parseFloat($('#TaxRate').val()) || 0) / 100;
+    $('#taxRatePrint').text('(' + (parseFloat($('#TaxRate').val()) || 0) + '%)');
+    let subtotal = 0, taxTotal = 0;
+    $('.line-row').each(function(i) {
+        $(this).find('.row-num').text(String(i + 1).padStart(2, '0'));
+        const amt = parseFloat($(this).find('.line-amount').val()) || 0;
+        const taxed = $(this).find('.tax-chk').is(':checked');
+        const tax = taxed ? amt * taxRate : 0;
+        $(this).find('.line-tax').text('$' + tax.toFixed(2));
+        subtotal += amt;
+        taxTotal += tax;
+    });
+    const other = parseFloat($('#otherAmount').val()) || 0;
+    $('#grandSubtotal').text('$' + subtotal.toFixed(2));
+    $('#grandTax').text('$' + taxTotal.toFixed(2));
+    $('#grandTotal').text('$' + (subtotal + taxTotal + other).toFixed(2));
+}
+
+/* ══════════════════════════════════════════════════════
+   ADD / REMOVE ROWS
+══════════════════════════════════════════════════════ */
+function buildRow(desc, po, amt, taxed) {
+    desc  = (desc  || '').replace(/"/g, '&quot;');
+    po    = (po    || '').replace(/"/g, '&quot;');
+    amt   = amt   || '0.00';
+    taxed = taxed || false;
+    return `<tr class="line-row">
+        <td class="row-num no-print">01</td>
+        <td><input type="text" class="desc-input" placeholder="Description..." value="${desc}"></td>
+        <td><input type="text" class="po-input" value="${po}"></td>
+        <td><input type="number" class="amount-input line-amount" step="0.01" value="${amt}"></td>
+        <td class="no-print" style="text-align:center;">
+            <input type="checkbox" class="tax-toggle tax-chk" ${taxed ? 'checked' : ''}>
+        </td>
+        <td class="val-out line-tax">$0.00</td>
+        <td class="no-print" style="text-align:center;">
+            <button class="remove-row-btn" onclick="removeRow(this)">&#10005;</button>
+        </td>
+    </tr>`;
+}
+
+function addLineRow(desc, po, amt, taxed) {
+    $('#lineItemsBody').append(buildRow(desc, po, amt, taxed));
+    calculate();
+}
+
+function removeRow(btn) {
+    $(btn).closest('tr').remove();
+    calculate();
+}
+
+/* ══════════════════════════════════════════════════════
+   RECORD MANAGEMENT
+══════════════════════════════════════════════════════ */
+const STORAGE_KEY = '3js_finalbill_v2';
+
+function getRecords() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) { return []; }
+}
+
+function collectRows() {
+    return $('.line-row').map(function() {
+        return {
+            desc:  $(this).find('.desc-input').val(),
+            po:    $(this).find('.po-input').val(),
+            amt:   $(this).find('.line-amount').val(),
+            taxed: $(this).find('.tax-chk').is(':checked')
+        };
+    }).get();
+}
+
+function animateSaveBtn() {
+    var btn = document.getElementById('sidebarSaveBtn');
+    if (!btn || btn.classList.contains('sb-pending')) return;
+    btn.classList.add('sb-pending');
+    var ok = false;
+    try { saveRecord(); ok = true; } catch(e) { ok = false; }
+    setTimeout(function() {
+        btn.classList.remove('sb-pending');
+        btn.classList.add(ok ? 'sb-success' : 'sb-fail');
+        setTimeout(function() {
+            btn.classList.remove('sb-success', 'sb-fail');
+        }, 1800);
+    }, 600);
+}
+
+function saveRecord() {
+    const ro    = $('#RONum').val().trim();
+    const claim = $('#ClaimNumTop').val().trim();
+    if (!ro && !claim) { showToast('Enter RO# or Claim# before saving.', 'error'); return; }
+
+    const selectedOpt = $('#fleetSelect option:selected');
+    const fleetName = selectedOpt.text();
+
+    const record = {
+        id: Date.now(),
+        savedOn: formatDate(new Date()),
+        fleetIdx: currentFleetIdx,
+        fleetName: fleetName,
+        ro, claim,
+        ins:        $('#InsCoTop').val(),
+        driver:     $('#Cust').val(),
+        veh:        $('#Veh').val(),
+        vin:        $('#VIN').val(),
+        taxRate:    $('#TaxRate').val(),
+        repairDate: $('#repairDate').val(),
+        other:      $('#otherAmount').val(),
+        rows:       collectRows()
+    };
+
+    let records = getRecords();
+    let idx = -1;
+    if (ro)           idx = records.findIndex(r => r.ro    && r.ro    === ro);
+    if (idx < 0 && claim) idx = records.findIndex(r => r.claim && r.claim === claim);
+    if (idx >= 0) { record.id = records[idx].id; records[idx] = record; }
+    else records.unshift(record);
+
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }
+    catch(e) { showToast('Storage full.', 'error'); return; }
+
+    showAutoSaved();
+    showToast('Record saved.', 'success');
+    renderSidebar();
+}
+
+function loadRecord(id) {
+    const r = getRecords().find(r => r.id === id);
+    if (!r) return;
+
+    if (r.fleetIdx !== undefined) {
+        currentFleetIdx = r.fleetIdx;
+        $('#fleetSelect').val(r.fleetIdx);
+        applyFleet(r.fleetIdx);
+    }
+
+    $('#RONum').val(r.ro || '');
+    $('#InsCoTop').val(r.ins || '');
+    $('#Cust').val(r.driver || '');
+    $('#Veh').val(r.veh || '');
+    $('#VIN').val(r.vin || '');
+    $('#ClaimNumTop').val(r.claim || '');
+    $('#TaxRate').val(r.taxRate || '10.5');
+    $('#repairDate').val(r.repairDate || '');
+    $('#otherAmount').val(r.other || '0.00');
+
+    $('#lineItemsBody').empty();
+    if (r.rows && r.rows.length) {
+        r.rows.forEach(row => addLineRow(row.desc, row.po, row.amt, row.taxed));
+    } else {
+        addLineRow(); addLineRow(); addLineRow();
+    }
+
+    calculate();
+    showToast('Record loaded.', 'success');
+}
+
+function slideDeleteRecord(id, btn, e) {
+    e.stopPropagation();
+    if (btn.classList.contains('ds-ok')) {
+        const records = getRecords().filter(r => r.id !== id);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+        renderSidebar();
+        showToast('Record deleted.', '');
+    } else {
+        btn.classList.add('ds-ok');
+        setTimeout(() => { if (btn.classList.contains('ds-ok')) btn.classList.remove('ds-ok'); }, 3000);
+    }
+}
+
+function renderSidebar(filter) {
+    const all = getRecords();
+    const s = (filter || '').toLowerCase().trim();
+    const filtered = s ? all.filter(r =>
+        (r.ro     && r.ro.toLowerCase().includes(s))     ||
+        (r.claim  && r.claim.toLowerCase().includes(s))  ||
+        (r.driver && r.driver.toLowerCase().includes(s)) ||
+        (r.ins    && r.ins.toLowerCase().includes(s))
+    ) : all;
+
+    $('#recordCount').text(
+        filtered.length + (s ? ' of ' + all.length : '') +
+        ' record' + (all.length !== 1 ? 's' : '') + ' saved'
+    );
+
+    if (!filtered.length) {
+        $('#sidebarList').html(
+            '<div style="color:#aaa;font-size:10px;text-align:center;margin-top:8px;">' +
+            (s ? 'No matches.' : 'No saved records.') + '</div>'
+        );
+        return;
+    }
+
+    $('#sidebarList').html(filtered.map(r => {
+        const f = FLEETS[r.fleetIdx || 0];
+        const fname = r.fleetName || f.label;
+        return `<div class="history-item" onclick="loadRecord(${r.id})">
+            <button class="del-slide-btn" onclick="slideDeleteRecord(${r.id}, this, event)">
+                <span class="ds-text">Del</span>
+                <span class="ds-icon">✕</span>
+            </button>
+            <div><span class="rec-fleet" style="background:${f.primary};color:${f.sectionText};">${fname}</span></div>
+            <div class="record-ro">${r.ro ? 'RO# ' + r.ro : (r.claim ? 'Claim# ' + r.claim : '—')}</div>
+            <div class="record-name">${r.driver || r.ins || 'No Name'}</div>
+            <div class="record-date">${r.claim || ''} | ${r.savedOn}</div>
+        </div>`;
+    }).join(''));
+}
+
+function filterSidebar() { renderSidebar($('#sidebarSearch').val()); }
+
+function createNewForm() {
+    if (confirm('Start a new form? Unsaved data will be lost.')) location.reload();
+}
+
+function clearForm() {
+    if (!confirm('Wipe all form data?')) return;
+    $('#RONum, #InsCoTop, #Cust, #Veh, #VIN, #ClaimNumTop, #repairDate').val('');
+    $('#TaxRate').val('10.5');
+    $('#otherAmount').val('0.00');
+    $('#lineItemsBody').empty();
+    addLineRow(); addLineRow(); addLineRow();
+    calculate();
+    showToast('Form wiped.', '');
+}
+
+function exportRecordsBackup() {
+    const records = getRecords();
+    if (!records.length) { showToast('No records to export.', 'error'); return; }
+    const blob = new Blob([JSON.stringify(records, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '3js_finalbill_backup_' + formatDate(new Date()).replace(/\//g, '-') + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Backup exported.', 'success');
+}
+
+function importRecordsBackup() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            try {
+                const imported = JSON.parse(ev.target.result);
+                if (!Array.isArray(imported)) throw new Error();
+                const existing = getRecords();
+                const ids = new Set(existing.map(r => r.id));
+                let added = 0;
+                imported.forEach(r => { if (!ids.has(r.id)) { existing.push(r); added++; } });
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
+                renderSidebar();
+                showToast('Imported ' + added + ' record' + (added !== 1 ? 's' : '') + '.', 'success');
+            } catch(err) { showToast('Import failed.', 'error'); }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+}
+
+/* ══════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════ */
+$(document).ready(function() {
+    setTodayDate();
+    applyFleet(0);
+    addLineRow(); addLineRow(); addLineRow();
+    renderSidebar();
+    calculate();
+
+    $(document).on('input change', '.line-amount, .tax-chk, #TaxRate, #otherAmount', calculate);
+
+    $(document).on('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            saveRecord();
+        }
+    });
+
+    $(document).on('focus', '.auto-clear', function() {
+        $(this).data('prev', $(this).val()).val('');
+    });
+    $(document).on('blur', '.auto-clear', function() {
+        if (!$(this).val()) $(this).val($(this).data('prev') || '');
+        calculate();
+    });
+
+    $(document).on('blur', 'input.proper-case', function() {
+        $(this).val(toProperCase($(this).val()));
+    });
+
+    // ── RIPPLE (btn-ripple — mouse-position) ─────────────
+    document.querySelectorAll('.btn-ripple').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            var rect = btn.getBoundingClientRect();
+            var x = e.clientX - rect.left;
+            var y = e.clientY - rect.top;
+            btn.style.setProperty('--rx', (x - 40) + 'px');
+            btn.style.setProperty('--ry', (y - 40) + 'px');
+            btn.classList.remove('rippling');
+            void btn.offsetWidth;
+            btn.classList.add('rippling');
+            setTimeout(function() { btn.classList.remove('rippling'); }, 500);
+        });
+    });
+
+    // ── ROW DELETE ANIMATION ─────────────────────────────
+    $(document).on('mouseenter', '.remove-row-btn', function() {
+        $(this).closest('tr').addClass('row-danger');
+    });
+    $(document).on('mouseleave', '.remove-row-btn', function() {
+        $(this).closest('tr').removeClass('row-danger');
+    });
+
+    // ── FLATPICKR — REPAIR DATE (single date, auto-fills today) ──
+    flatpickr('#repairDate', {
+        dateFormat: 'm/d/Y',
+        defaultDate: 'today',
+        disableMobile: true,
+        onChange: function(selectedDates, dateStr) {
+            $('#repairDate').val(dateStr);
+        }
+    });
+});
+</script>
+</body>
+</html>
