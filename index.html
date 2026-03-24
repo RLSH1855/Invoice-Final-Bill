@@ -1313,10 +1313,15 @@ function loadRecord(id) {
 
     if (r.fleetIdx !== undefined) {
         currentFleetIdx = r.fleetIdx;
+        var sel = document.getElementById('fleetSelect');
         if (r.fleetSelectIndex !== undefined) {
-            document.getElementById('fleetSelect').selectedIndex = r.fleetSelectIndex;
+            sel.selectedIndex = r.fleetSelectIndex;
+        } else if (r.fleetName) {
+            for (var i = 0; i < sel.options.length; i++) {
+                if (sel.options[i].text === r.fleetName) { sel.selectedIndex = i; break; }
+            }
         } else {
-            $('#fleetSelect').val(r.fleetIdx);
+            sel.value = r.fleetIdx;
         }
         applyFleet(r.fleetIdx);
     }
