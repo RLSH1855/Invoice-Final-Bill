@@ -914,13 +914,13 @@
                 <select id="fleetSelect" class="fleet-select" onchange="applyFleet(this.value)">
                     <option value="0">AmeriFleet</option>
                     <option value="1">ARI</option>
-                    <option value="0">CEI / Element</option>
-                    <option value="2">EMKAY</option>
-                    <option value="2">Fleet Response</option>
-                    <option value="1">Holman</option>
-                    <option value="2">Innovation Auto</option>
-                    <option value="0">LeasePlan</option>
-                    <option value="1">Wheels</option>
+                    <option value="2">CEI / Element</option>
+                    <option value="3">EMKAY</option>
+                    <option value="4">Fleet Response</option>
+                    <option value="5">Holman</option>
+                    <option value="6">Innovation Auto</option>
+                    <option value="7">LeasePlan</option>
+                    <option value="8">Wheels</option>
                 </select>
             </div>
 
@@ -1118,19 +1118,18 @@ const FLEETS = [
     }
 ];
 
-/* Maps each dropdown option's value to a fleet name */
-const FLEET_NAMES = {
-    '0': { options: ['AmeriFleet', 'CEI / Element', 'LeasePlan'] },
-    '1': { options: ['ARI', 'Holman', 'Wheels'] },
-    '2': { options: ['Fleet Response', 'EMKAY', 'Innovation Auto'] }
-};
+/* Maps each unique option value (0-8) to a fleet theme index (0-2) */
+const OPTION_THEME = [0, 1, 0, 2, 2, 1, 2, 0, 1];
+// 0=AmeriFleet→0, 1=ARI→1, 2=CEI→0, 3=EMKAY→2, 4=FleetResp→2,
+// 5=Holman→1, 6=Innovation→2, 7=LeasePlan→0, 8=Wheels→1
 
 let currentFleetIdx = 0;
 
-function applyFleet(idx) {
-    idx = parseInt(idx);
-    currentFleetIdx = idx;
-    const f = FLEETS[idx];
+function applyFleet(optVal) {
+    optVal = parseInt(optVal);
+    var themeIdx = OPTION_THEME[optVal] !== undefined ? OPTION_THEME[optVal] : 0;
+    currentFleetIdx = themeIdx;
+    const f = FLEETS[themeIdx];
     const s = document.documentElement.style;
     s.setProperty('--primary',      f.primary);
     s.setProperty('--primary-dark', f.primaryDark);
@@ -1272,14 +1271,14 @@ function saveRecord() {
 
     const selectedOpt = $('#fleetSelect option:selected');
     const fleetName = selectedOpt.text();
-    const fleetSelectIndex = document.getElementById('fleetSelect').selectedIndex;
+    const fleetOptionValue = parseInt($('#fleetSelect').val());
 
     const record = {
         id: Date.now(),
         savedOn: formatDate(new Date()),
+        fleetOptionValue: fleetOptionValue,
         fleetIdx: currentFleetIdx,
         fleetName: fleetName,
-        fleetSelectIndex: fleetSelectIndex,
         ro, claim,
         ins:        $('#InsCoTop').val(),
         driver:     $('#Cust').val(),
@@ -1311,19 +1310,18 @@ function loadRecord(id) {
     const r = getRecords().find(r => r.id === id);
     if (!r) return;
 
-    if (r.fleetIdx !== undefined) {
-        currentFleetIdx = r.fleetIdx;
-        var sel = document.getElementById('fleetSelect');
-        if (r.fleetSelectIndex !== undefined) {
-            sel.selectedIndex = r.fleetSelectIndex;
-        } else if (r.fleetName) {
-            for (var i = 0; i < sel.options.length; i++) {
-                if (sel.options[i].text === r.fleetName) { sel.selectedIndex = i; break; }
-            }
-        } else {
-            sel.value = r.fleetIdx;
+    var sel = document.getElementById('fleetSelect');
+    if (r.fleetOptionValue !== undefined) {
+        sel.value = r.fleetOptionValue;
+        applyFleet(r.fleetOptionValue);
+    } else if (r.fleetName) {
+        var matched = false;
+        for (var i = 0; i < sel.options.length; i++) {
+            if (sel.options[i].text === r.fleetName) { sel.value = i; applyFleet(i); matched = true; break; }
         }
-        applyFleet(r.fleetIdx);
+        if (!matched) { sel.value = 0; applyFleet(0); }
+    } else {
+        sel.value = 0; applyFleet(0);
     }
 
     $('#RONum').val(r.ro || '');
@@ -1385,7 +1383,8 @@ function renderSidebar(filter) {
     }
 
     $('#sidebarList').html(filtered.map(r => {
-        const f = FLEETS[r.fleetIdx || 0];
+        const themeIdx = r.fleetOptionValue !== undefined ? (OPTION_THEME[r.fleetOptionValue] || 0) : (r.fleetIdx || 0);
+        const f = FLEETS[themeIdx];
         const fname = r.fleetName || f.label;
         return `<div class="history-item" onclick="loadRecord(${r.id})">
             <button class="del-slide-btn" onclick="slideDeleteRecord(${r.id}, this, event)">
