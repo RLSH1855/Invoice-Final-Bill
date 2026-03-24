@@ -1272,12 +1272,14 @@ function saveRecord() {
 
     const selectedOpt = $('#fleetSelect option:selected');
     const fleetName = selectedOpt.text();
+    const fleetSelectIndex = document.getElementById('fleetSelect').selectedIndex;
 
     const record = {
         id: Date.now(),
         savedOn: formatDate(new Date()),
         fleetIdx: currentFleetIdx,
         fleetName: fleetName,
+        fleetSelectIndex: fleetSelectIndex,
         ro, claim,
         ins:        $('#InsCoTop').val(),
         driver:     $('#Cust').val(),
@@ -1311,7 +1313,11 @@ function loadRecord(id) {
 
     if (r.fleetIdx !== undefined) {
         currentFleetIdx = r.fleetIdx;
-        $('#fleetSelect').val(r.fleetIdx);
+        if (r.fleetSelectIndex !== undefined) {
+            document.getElementById('fleetSelect').selectedIndex = r.fleetSelectIndex;
+        } else {
+            $('#fleetSelect').val(r.fleetIdx);
+        }
         applyFleet(r.fleetIdx);
     }
 
