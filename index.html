@@ -939,6 +939,7 @@
 
             <h6 style="display:flex; align-items:center; justify-content:space-between;">
                 <span>RECORDS <span id="autoSaveStatus">&#10003; AUTO-SAVED</span></span>
+                <img id="syncStatus" title="Sync status" style="width:20px;height:20px;vertical-align:middle;cursor:default;" src="">
             </h6>
             <input type="text" id="sidebarSearch" class="search-box" placeholder="Search RO#, Claim#, Driver..." onkeyup="filterSidebar()" spellcheck="false">
             <div id="recordCount" class="record-count"></div>
@@ -1301,6 +1302,7 @@ function saveRecord() {
     showAutoSaved();
     showToast('Record saved.', 'success');
     renderSidebar();
+    sheetsSaveAllRecords(records).catch(function(){});
 }
 
 function loadRecord(id) {
@@ -1341,6 +1343,7 @@ function slideDeleteRecord(id, btn, e) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
         renderSidebar();
         showToast('Record deleted.', '');
+        sheetsSaveAllRecords(records).catch(function(){});
     } else {
         btn.classList.add('ds-ok');
         setTimeout(() => { if (btn.classList.contains('ds-ok')) btn.classList.remove('ds-ok'); }, 3000);
@@ -1434,6 +1437,7 @@ function importRecordsBackup() {
                 imported.forEach(r => { if (!ids.has(r.id)) { existing.push(r); added++; } });
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
                 renderSidebar();
+                sheetsSaveAllRecords(existing).catch(function(){});
                 showToast('Imported ' + added + ' record' + (added !== 1 ? 's' : '') + '.', 'success');
             } catch(err) { showToast('Import failed.', 'error'); }
         };
@@ -1451,6 +1455,8 @@ $(document).ready(function() {
     addLineRow(); addLineRow(); addLineRow();
     renderSidebar();
     calculate();
+    updateSyncStatus('local');
+    initSheetsSync();
 
     $(document).on('input change', '.line-amount, .tax-chk, #TaxRate, #otherAmount', calculate);
 
@@ -1506,6 +1512,79 @@ $(document).ready(function() {
         }
     });
 });
+
+/* ══════════════════════════════════════════════════════
+   GOOGLE SHEETS SYNC
+   Deploy Final_Bill_Apps_Script.gs as a Web App, paste
+   the /exec URL below.
+══════════════════════════════════════════════════════ */
+var SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyNKU2mqyvnvf4w4FaOoWzq8RDIlMvYr7bQe_eMLUBhjzepnfacwxech5J8ff3ONBhx/exec';
+
+/* Converts "03/23/2026" → "March 23, 2026" */
+function formatDateLong(dateStr) {
+    if (!dateStr) return '';
+    var months = ['January','February','March','April','May','June',
+                  'July','August','September','October','November','December'];
+    var parts = dateStr.split('/');
+    if (parts.length !== 3) return dateStr;
+    var m = parseInt(parts[0], 10) - 1;
+    var d = parseInt(parts[1], 10);
+    var y = parts[2];
+    if (isNaN(m) || isNaN(d)) return dateStr;
+    return months[m] + ' ' + d + ', ' + y;
+}
+
+/* Sync status cloud icon in Records header */
+function updateSyncStatus(state) {
+    var img = document.getElementById('syncStatus');
+    if (!img) return;
+    var colors = { connected:'#27ae60', syncing:'#f0ad4e', error:'#e74c3c', local:'#96a0aa' };
+    var titles = { connected:'Synced to Google Sheets', syncing:'Syncing\u2026', error:'Sync error', local:'Local only' };
+    var c = colors[state] || colors.local;
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" fill="' + c + '"/></svg>';
+    img.src   = 'data:image/svg+xml,' + encodeURIComponent(svg);
+    img.title = titles[state] || 'Local only';
+}
+
+/* POST all records → Google Sheets (4 lookup columns only) */
+async function sheetsSaveAllRecords(records) {
+    if (!SHEETS_URL || SHEETS_URL.indexOf('PASTE') === 0) return;
+    updateSyncStatus('syncing');
+    try {
+        var json = JSON.stringify({ action: 'save', records: records });
+        var resp = await fetch(SHEETS_URL, {
+            method: 'POST',
+            redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain' },
+            body: json
+        });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        var data = await resp.json();
+        if (!data.ok) throw new Error(data.error || 'Save failed');
+        updateSyncStatus('connected');
+        return true;
+    } catch(err) {
+        console.error('Sheets save error:', err);
+        updateSyncStatus('error');
+        throw err;
+    }
+}
+
+/* Ping on load — just checks connectivity, no data loaded back */
+async function initSheetsSync() {
+    if (!SHEETS_URL || SHEETS_URL.indexOf('PASTE') === 0) {
+        updateSyncStatus('local');
+        return;
+    }
+    try {
+        var resp = await fetch(SHEETS_URL + '?t=' + Date.now(), { method: 'GET', redirect: 'follow' });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        updateSyncStatus('connected');
+    } catch(err) {
+        console.warn('Sheets ping:', err.message);
+        updateSyncStatus('local');
+    }
+}
 </script>
 </body>
 </html>
