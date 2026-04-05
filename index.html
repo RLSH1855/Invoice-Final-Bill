@@ -1302,9 +1302,10 @@ function saveRecord(silent) {
         veh:        $('#Veh').val(),
         vin:        $('#VIN').val(),
         taxRate:    $('#TaxRate').val(),
-        repairDate: $('#repairDate').val(),
-        other:      $('#otherAmount').val(),
-        rows:       collectRows()
+        repairDate:   $('#repairDate').val(),
+        other:        $('#otherAmount').val(),
+        rows:         collectRows(),
+        invoiceTotal: $('#grandTotal').text()
     };
 
     let records = getRecords();
